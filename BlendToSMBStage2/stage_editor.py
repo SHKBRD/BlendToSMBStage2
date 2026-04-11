@@ -490,14 +490,17 @@ class VIEW3D_PT_4_export_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
         layout.label(text="Export Settings")
         layout.prop(context.scene, "export_timestep")
         layout.prop(context.scene, "export_value_round")
         layout.prop(context.scene, "export_time_round")
+
         layout.label(text="Root Export Paths")
         layout.prop(context.scene, "export_root_path")
         layout.prop(context.scene, "export_root_stage_id")
         layout.operator("object.root_export_path_update", text="Update Stage Export Paths With ID")
+
         layout.label(text="Export Paths")
         layout.prop(context.scene, "export_config_path")
         layout.prop(context.scene, "export_model_path")
@@ -508,16 +511,23 @@ class VIEW3D_PT_4_export_panel(bpy.types.Panel):
         layout.prop(context.scene, "export_background_path")
         layout.prop(context.scene, "gx_preset_path")
         layout.prop(context.scene, "auto_path_names")
-        layout.label(text="Export Operators")
-        layout.operator("object.generate_config", text="Generate Config")
-        layout.operator("object.export_obj", text="Export OBJ")
+        
+        layout.label(text="Export Stage Files")
         layout.operator("object.export_stage", text="Export Stage (GMA/TPL/LZ)")
         layout.operator("object.export_gmatpl", text="Export GMA/TPL")
-        export_lz_raw = layout.operator("object.export_stagedef", text="Export LZ.RAW")
-        export_lz_raw.compressed = False
         export_lz = layout.operator("object.export_stagedef", text="Export LZ")
         export_lz.compressed = True
+        
+
+        layout.label(text="Export Intermediate Stage Files")
+        layout.operator("object.generate_config", text="Generate Config")
+        layout.operator("object.export_obj", text="Export OBJ")
         export_bg = layout.operator("object.export_background", text="Export Background")
+        export_lz_raw = layout.operator("object.export_stagedef", text="Export LZ.RAW")
+        export_lz_raw.compressed = False
+        
+        
+        
 
 # UI panel for global scene/stage settings
 class VIEW3D_PT_5_settings(bpy.types.Panel):
