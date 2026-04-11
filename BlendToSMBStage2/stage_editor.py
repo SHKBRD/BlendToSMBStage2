@@ -511,6 +511,7 @@ class VIEW3D_PT_4_export_panel(bpy.types.Panel):
         layout.label(text="Export Operators")
         layout.operator("object.generate_config", text="Generate Config")
         layout.operator("object.export_obj", text="Export OBJ")
+        layout.operator("object.export_stage", text="Export Stage (GMA/TPL/LZ)")
         layout.operator("object.export_gmatpl", text="Export GMA/TPL")
         export_lz_raw = layout.operator("object.export_stagedef", text="Export LZ.RAW")
         export_lz_raw.compressed = False
@@ -1027,6 +1028,18 @@ class OBJECT_OT_root_update_exports(bpy.types.Operator):
         context.scene.export_gma_path = gma_path
         context.scene.export_tpl_path = tpl_path
         context.scene.export_stagedef_path = lz_path
+        return {'FINISHED'}
+
+# Export GMA/TPL/LZ files together
+class OBJECT_OT_export_stage(bpy.types.Operator):
+    bl_idname = "object.export_stage"
+    bl_label = "Export Stage"
+    bl_description = "Export GMA/TPL/LZ files to their specified paths"
+    bl_options = {'UNDO'} 
+
+    def execute(self, context):
+        bpy.ops.object.export_gmatpl("INVOKE_DEFAULT")
+        bpy.ops.object.export_stagedef("INVOKE_DEFAULT")
         return {'FINISHED'}
 
 # Operator for exporting the stage model as a .OBJ file
