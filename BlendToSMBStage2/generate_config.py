@@ -178,6 +178,7 @@ def _generate_anim_channel_xml(parent_xml, anim_channel: AnimData.Channel, name)
 
     
 def generate_anim_xml(parent_xml, anim_data: AnimData):
+    print("Generating keyframes for xml")
     keyframes_xml = etree.Element("animKeyframes")
     # Y and Z need to be swapped for some reason?
     _generate_anim_channel_xml(keyframes_xml, anim_data.pos_x_channel, "posX")

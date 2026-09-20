@@ -1983,11 +1983,13 @@ class OBJECT_OT_generate_config(bpy.types.Operator):
                     exp.obj.keyframe_insert(curve_type, index=index, frame=begin_frame)
 
                 print("\tInserted frame zero keyframe for item group " + exp.obj.name)
-
+        
+        print("doing data from fcurve keyframes")
         # Generate initial animation data based on fcurve keyframes
         for exp in itertools.chain(ig_export_datas, fg_export_datas, bg_export_datas):
             generate_config.generate_keyframe_anim_data(exp.obj, exp.anim_data)
 
+        print("generating per-global-frame animation data")
         # Generate per-global-frame animation data
         for frame in range(begin_frame, end_frame + 1):
             bpy.context.scene.frame_set(frame)
@@ -1995,18 +1997,22 @@ class OBJECT_OT_generate_config(bpy.types.Operator):
                 generate_config.generate_per_frame_anim_data(exp.obj, exp.anim_data)
         context.scene.frame_set(begin_frame)
 
+        print("gen FG XML")
         # Generate FG/BG XML
         for fg_exp in fg_export_datas:
             descriptor_model_fg.DescriptorFG.generate_xml_with_anim(root, fg_exp.obj, fg_exp.anim_data)
+        print("gen BG XML")
         for bg_exp in bg_export_datas:
             descriptor_model_bg.DescriptorBG.generate_xml_with_anim(root, bg_exp.obj, bg_exp.anim_data)
 
+        print("gen Object XML")
         # Generate other object XML
         for other_exp in other_export_datas:
             for desc in descriptors.descriptors_root:
                 if other_exp.obj.name.startswith(desc.get_object_name()): 
                     desc.generate_xml(root, other_exp.obj)
 
+        print("gen IG XML")
         # Generate itemgroup XML
         for ig_exp in ig_export_datas:
             ig_xml = descriptor_item_group.DescriptorIG.generate_xml_with_anim(root, ig_exp.obj, ig_exp.anim_data)
@@ -2033,6 +2039,7 @@ class OBJECT_OT_generate_config(bpy.types.Operator):
         # Restore frame user was on before exporting
         bpy.context.scene.frame_set(orig_frame)
 
+        print("Import XML")
         # Import background and foreground objects from a .XML file, if it exists
         bg_path = bpy.path.abspath(context.scene.background_import_path)
         obj_names = [obj.name for obj in context.scene.objects]
@@ -2048,10 +2055,9 @@ class OBJECT_OT_generate_config(bpy.types.Operator):
 
         print("Completed, saving...")
 
-        config_string = etree.tostring(root, encoding="unicode")
-        config_dom = minidom.parseString(config_string)
-        config_string_pretty = config_dom.toprettyxml()
+        print("makestring")
 
+        print("openwrite")
         config_file = open(bpy.path.abspath(context.scene.export_config_path), "w")
         config_file.write(config_string_pretty)
         config_file.close()
@@ -2063,7 +2069,8 @@ class OBJECT_OT_generate_config(bpy.types.Operator):
                 if (idx, curve_type) in obj_existing_channels: continue 
                 print(f"Deleted frame zero channel {curve_type}[{idx}] for item group {obj.name}")
                 obj.keyframe_delete(curve_type, index=idx, frame=begin_frame)
-
+        
+        print("Actually Finished generating config")
         return {'FINISHED'}
 
 # Function for updating the properties of an active object
