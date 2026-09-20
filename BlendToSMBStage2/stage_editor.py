@@ -2056,6 +2056,14 @@ class OBJECT_OT_generate_config(bpy.types.Operator):
         print("Completed, saving...")
 
         print("makestring")
+        # print("ms1")
+        #config_string = etree.tostring(root, encoding="unicode")
+        # print("ms2")
+        #config_dom = minidom.parseString(config_string)
+        # print("ms3")
+        #config_string_pretty = config_dom.toprettyxml()
+        etree.indent(root, space="\t")
+        config_string_pretty = etree.tostring(root, encoding="unicode")
 
         print("openwrite")
         config_file = open(bpy.path.abspath(context.scene.export_config_path), "w")
