@@ -15,7 +15,7 @@ jobs:
         working-directory: ./smblevelworkshop2
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: 'true'
 
@@ -40,7 +40,7 @@ jobs:
       run: mkdir build
 
     - name: Run CMake
-      run: cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=./build/install -S . -B ./build
+      run: cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=./build/install -DCMAKE_PREFIX_PATH="$MINGW_PREFIX" -S . -B ./build
 
     - name: Make and install the project
       run: ninja -C ./build -j $(nproc) ws2common/install ws2lz/install ws2lzfrontend/install
@@ -68,7 +68,7 @@ jobs:
         working-directory: ./GxUtils/GxUtils
         
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: 'true'
         
@@ -103,7 +103,7 @@ jobs:
     needs: [build-ws, build-gx]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
