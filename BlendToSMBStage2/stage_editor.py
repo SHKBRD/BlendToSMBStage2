@@ -1989,12 +1989,74 @@ class OBJECT_OT_generate_config(bpy.types.Operator):
         for exp in itertools.chain(ig_export_datas, fg_export_datas, bg_export_datas):
             generate_config.generate_keyframe_anim_data(exp.obj, exp.anim_data)
 
+        # collect objects, simulate animation curves on particular frames to avoid using scene.frame_set(frame)
+        prepared_objects = []
+        for exp in itertools.chain(ig_export_datas, fg_export_datas, bg_export_datas):
+            obj = exp.obj
+            anim_data = exp.anim_data
+            
+            if not obj.animation_data or not obj.animation_data.action:
+                continue
+                
+            action = obj.animation_data.action
+            action_slot = obj.animation_data.action_slot
+            channelbag = anim_utils.action_get_channelbag_for_slot(action, action_slot)
+            fcurves = channelbag.fcurves
+            
+            curves_to_track = [
+                (fcurves.find("location", index=0), anim_data.pos_x_channel, 1.0),
+                (fcurves.find("location", index=1), anim_data.pos_y_channel, -1.0),
+                (fcurves.find("location", index=2), anim_data.pos_z_channel, 1.0),
+                (fcurves.find("rotation_euler", index=0), anim_data.rot_x_channel, math.degrees(1.0)),
+                (fcurves.find("rotation_euler", index=1), anim_data.rot_y_channel, -math.degrees(1.0)),
+                (fcurves.find("rotation_euler", index=2), anim_data.rot_z_channel, math.degrees(1.0)),
+                (fcurves.find("scale", index=0), anim_data.scale_x_channel, 1.0),
+                (fcurves.find("scale", index=1), anim_data.scale_y_channel, 1.0),
+                (fcurves.find("scale", index=2), anim_data.scale_z_channel, 1.0),
+            ]
+            
+            # Filter out channels that don't have active keyframe curves
+            active_curves = [(c, chan, mult) for c, chan, mult in curves_to_track if c is not None]
+            if not active_curves:
+                continue
+                
+            obj_end_frame = bpy.context.scene.frame_end
+            if "animLoopTime" in obj and obj["animLoopTime"] != -1.0:
+                obj_end_frame = bpy.context.scene.frame_start + int(round(obj["animLoopTime"] * 60)) - 1
+                
+            obj_timestep = bpy.context.scene.export_timestep
+            if "exportTimestep" in obj and obj["exportTimestep"] != -1:
+                obj_timestep = obj["exportTimestep"]
+                
+            prepared_objects.append({
+                'curves': active_curves,
+                'end_frame': obj_end_frame,
+                'timestep': obj_timestep
+            })
+
         print("generating per-global-frame animation data")
-        # Generate per-global-frame animation data
         for frame in range(begin_frame, end_frame + 1):
-            bpy.context.scene.frame_set(frame)
-            for exp in itertools.chain(ig_export_datas, fg_export_datas, bg_export_datas):
-                generate_config.generate_per_frame_anim_data(exp.obj, exp.anim_data)
+            
+            for item in prepared_objects:
+                timestep = item['timestep']
+                start_diff = frame - bpy.context.scene.frame_start
+                
+                if not (bpy.context.scene.frame_start <= frame <= item['end_frame'] and start_diff % timestep == 0):
+                    continue
+                    
+                seconds = round(start_diff / bpy.context.scene.render.fps, bpy.context.scene.export_time_round)
+                
+                for curve, anim_channel, multiplier in item['curves']:
+                    raw_val = curve.evaluate(frame) * multiplier
+                    val = round(raw_val, bpy.context.scene.export_value_round)
+                    
+                    if bpy.context.scene.optimize_keyframes and (val == anim_channel.prev_val):
+                        continue
+                    anim_channel.prev_val = val
+                    
+                    if seconds not in anim_channel.time_val_map:
+                        anim_channel.time_val_map[seconds] = val
+
         context.scene.frame_set(begin_frame)
 
         print("gen FG XML")
